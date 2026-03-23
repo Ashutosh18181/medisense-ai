@@ -11,7 +11,15 @@ const MODEL     = "claude-sonnet-4-20250514";
 
 // ── Supabase helpers ──────────────────────────────────────
 const supa = {
-  headers: { "Content-Type": "application/json", "apikey": SUPA_ANON, "Authorization": `Bearer ${SUPA_ANON}` },
+  headers: { "Content-Type": "application/json",
+    "x-api-key": process.env.REACT_APP_ANTHROPIC_KEY,
+    "anthropic-version": "2023-06-01",
+    "anthropic-dangerous-direct-browser-access": "true",
+  },,
+    "x-api-key": process.env.REACT_APP_ANTHROPIC_KEY,
+    "anthropic-version": "2023-06-01",
+    "anthropic-dangerous-direct-browser-access": "true",
+  },, "apikey": SUPA_ANON, "Authorization": `Bearer ${SUPA_ANON}` },
 
   // Auth
   async signUp(email, password, name) {
