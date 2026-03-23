@@ -11,15 +11,7 @@ const MODEL     = "claude-sonnet-4-20250514";
 
 // ── Supabase helpers ──────────────────────────────────────
 const supa = {
-  headers: { "Content-Type": "application/json",
-    "x-api-key": process.env.REACT_APP_ANTHROPIC_KEY,
-    "anthropic-version": "2023-06-01",
-    "anthropic-dangerous-direct-browser-access": "true",
-  },,
-    "x-api-key": process.env.REACT_APP_ANTHROPIC_KEY,
-    "anthropic-version": "2023-06-01",
-    "anthropic-dangerous-direct-browser-access": "true",
-  },, "apikey": SUPA_ANON, "Authorization": `Bearer ${SUPA_ANON}` },
+  headers: { "Content-Type": "application/json", "apikey": SUPA_ANON, "Authorization": `Bearer ${SUPA_ANON}` },
 
   // Auth
   async signUp(email, password, name) {
@@ -713,7 +705,7 @@ function AppShell({user,onLogout}){
       let pt=symptoms.trim()||"Analyze this image.";
       if(Object.values(vitals).some(v=>v))pt+=`\nVitals: BP=${vitals.bp||"?"},Temp=${vitals.temp||"?"}C,HR=${vitals.hr||"?"},Sugar=${vitals.sugar||"?"},SpO2=${vitals.spo2||"?"}%`;
       uc.push({type:"text",text:pt});
-      const res=await fetch(AI_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,max_tokens:1000,system:getSys(lang),messages:[{role:"user",content:uc}]})});
+      const res=await fetch(AI_API,{method:"POST",headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:MODEL,max_tokens:1000,system:getSys(lang),messages:[{role:"user",content:uc}]})});
       const data=await res.json();
       const txt=data.content?.[0]?.text||"";const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error();
       const parsed=JSON.parse(m[0]);setResult(parsed);
@@ -916,7 +908,7 @@ function ChatPanel({baseResult,lang}){
   useEffect(()=>{endRef.current&&endRef.current.scrollIntoView({behavior:"smooth"});},[msgs]);
   const send=async()=>{
     if(!inp.trim()||load)return;const um={r:"user",t:inp.trim()};setMsgs(p=>[...p,um]);setInp("");setLoad(true);
-    try{const res=await fetch(AI_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,max_tokens:500,system:`You are MediSense AI. ${baseResult?`Context: ${(baseResult.conditions||[]).map(c=>c.name).join(", ")}.`:""} Be concise and empathetic. Respond in ${lang==="hi"?"Hindi":lang==="ta"?"Tamil":"English"}.`,messages:[...msgs,um].map(m=>({role:m.r==="user"?"user":"assistant",content:m.t}))})});const data=await res.json();setMsgs(p=>[...p,{r:"ai",t:data.content?.[0]?.text||"Sorry, couldn't respond."}]);}catch(e){setMsgs(p=>[...p,{r:"ai",t:"Something went wrong."}]);}finally{setLoad(false);}
+    try{const res=await fetch(AI_API,{method:"POST",headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:MODEL,max_tokens:500,system:`You are MediSense AI. ${baseResult?`Context: ${(baseResult.conditions||[]).map(c=>c.name).join(", ")}.`:""} Be concise and empathetic. Respond in ${lang==="hi"?"Hindi":lang==="ta"?"Tamil":"English"}.`,messages:[...msgs,um].map(m=>({role:m.r==="user"?"user":"assistant",content:m.t}))})});const data=await res.json();setMsgs(p=>[...p,{r:"ai",t:data.content?.[0]?.text||"Sorry, couldn't respond."}]);}catch(e){setMsgs(p=>[...p,{r:"ai",t:"Something went wrong."}]);}finally{setLoad(false);}
   };
   return <div style={{display:"flex",flexDirection:"column",height:360}}><div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:9,marginBottom:10}}>{msgs.map((m,i)=><div key={i} style={{display:"flex",justifyContent:m.r==="user"?"flex-end":"flex-start"}}><div style={{maxWidth:"80%",background:m.r==="user"?"linear-gradient(135deg,#38bdf8,#818cf8)":"rgba(255,255,255,.06)",borderRadius:m.r==="user"?"14px 14px 3px 14px":"14px 14px 14px 3px",padding:"9px 13px",fontSize:13,color:m.r==="user"?"white":"rgba(255,255,255,.85)",lineHeight:1.6}}>{m.t}</div></div>)}{load&&<div><div style={{background:"rgba(255,255,255,.06)",borderRadius:"14px 14px 14px 3px",padding:"9px 13px",fontSize:13,color:"rgba(255,255,255,.4)",display:"inline-block"}}>Thinking…</div></div>}<div ref={endRef}/></div><div style={{display:"flex",gap:8}}><input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask a follow-up question..." style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:11,padding:"9px 13px",color:"white",fontSize:13,fontFamily:"inherit",outline:"none"}}/><Btn onClick={send} disabled={!inp.trim()||load} grad>{load?"…":"Send"}</Btn></div></div>;
 }
@@ -934,7 +926,7 @@ function ImagePanel({onImageB64,onClose}){
 }
 function MedicinePanel(){
   const [meds,setMeds]=useState(["",""]);const [res,setRes]=useState(null);const [load,setLoad]=useState(false);
-  const check=async()=>{const valid=meds.filter(m=>m.trim());if(valid.length<2)return;setLoad(true);setRes(null);try{const r=await fetch(AI_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:MODEL,max_tokens:600,system:getMedSys(),messages:[{role:"user",content:"Check: "+valid.join(", ")}]})});const data=await r.json();const txt=data.content?.[0]?.text||"";const m=txt.match(/\{[\s\S]*\}/);if(m)setRes(JSON.parse(m[0]));}catch(e){}finally{setLoad(false);}};
+  const check=async()=>{const valid=meds.filter(m=>m.trim());if(valid.length<2)return;setLoad(true);setRes(null);try{const r=await fetch(AI_API,{method:"POST",headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:MODEL,max_tokens:600,system:getMedSys(),messages:[{role:"user",content:"Check: "+valid.join(", ")}]})});const data=await r.json();const txt=data.content?.[0]?.text||"";const m=txt.match(/\{[\s\S]*\}/);if(m)setRes(JSON.parse(m[0]));}catch(e){}finally{setLoad(false);}};
   return <div><p style={{fontSize:12,color:"rgba(255,255,255,.4)",marginBottom:12}}>Enter 2+ medicines to check for dangerous interactions.</p><div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>{meds.map((m,i)=><div key={i} style={{display:"flex",gap:8}}><input value={m} onChange={e=>{const n=[...meds];n[i]=e.target.value;setMeds(n);}} placeholder={`Medicine ${i+1}`} style={{flex:1,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"9px 12px",color:"white",fontSize:13,fontFamily:"inherit",outline:"none"}}/>{i>=2&&<button onClick={()=>setMeds(p=>p.filter((_,j)=>j!==i))} style={{background:"rgba(239,68,68,.15)",border:"1px solid rgba(239,68,68,.3)",borderRadius:8,padding:"0 12px",color:"#fca5a5",fontSize:13,cursor:"pointer"}}>✕</button>}</div>)}<button onClick={()=>setMeds(p=>[...p,""])} style={{background:"transparent",border:"1px dashed rgba(255,255,255,.15)",borderRadius:10,padding:"7px",color:"rgba(255,255,255,.35)",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>+ Add medicine</button></div><Btn onClick={check} disabled={meds.filter(m=>m.trim()).length<2||load} grad full style={{marginBottom:12}}>{load?"Checking…":"Check Interactions"}</Btn>{res&&<div><div style={{background:res.safe?"rgba(16,185,129,.1)":"rgba(239,68,68,.1)",border:`1px solid ${res.safe?"rgba(16,185,129,.3)":"rgba(239,68,68,.3)"}`,borderRadius:13,padding:"11px 13px",marginBottom:10}}><p style={{color:res.safe?"#6ee7b7":"#fca5a5",fontWeight:700,fontSize:13}}>{res.safe?"✅ Generally Safe":"⚠️ Interactions Found"}</p><p style={{color:"rgba(255,255,255,.55)",fontSize:12,marginTop:3}}>{res.summary}</p></div>{(res.interactions||[]).map((it,i)=>{const s=SEV[it.severity]||SEV.mild;return<div key={i} style={{background:s.bg,border:`1px solid ${s.bd}`,borderRadius:11,padding:"9px 12px",marginBottom:7}}><p style={{color:s.tx,fontWeight:600,fontSize:12}}>{(it.medicines||[]).join(" + ")} · {it.severity}</p><p style={{color:"rgba(255,255,255,.6)",fontSize:12,marginTop:2}}>{it.effect}</p><p style={{color:"rgba(255,255,255,.4)",fontSize:11,marginTop:2,fontStyle:"italic"}}>💡 {it.advice}</p></div>;})}</div>}</div>;
 }
 function RemindersPanel(){
